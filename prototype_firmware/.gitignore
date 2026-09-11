@@ -24,3 +24,4 @@
 !prototype_firmware.ioc
 !.mxproject
 !cmake
+!startup_stm32f767xx.s
