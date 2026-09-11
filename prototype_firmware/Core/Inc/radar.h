@@ -1,0 +1,77 @@
+#ifndef __RADAR_H
+#define __RADAR_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdint.h>
+
+const uint32_t register_list[] = {
+    0x11c0e20UL,
+    0x3140210UL,
+    0x9e967fdUL,
+    0xb4805b4UL,
+    0xd1087ffUL,
+    0x11000000UL,
+    0x13000000UL,
+    0x15000000UL,
+    0x17d0d9e0UL,
+    0x19000000UL,
+    0x1b000000UL,
+    0x1d000000UL,
+    0x1f000960UL,
+    0x21003c51UL,
+    0x2314001fUL,
+    0x2500002aUL,
+    0x2d000490UL,
+    0x3b000480UL,
+    0x49000480UL,
+    0x57000480UL,
+    0x5911be0eUL,
+    0x5b5f7c0aUL,
+    0x5d007000UL,
+    0x5fbf3e1eUL,
+    0x619a7d58UL,
+    0x630000dfUL,
+    0x65001432UL,
+    0x67000200UL,
+    0x69000000UL,
+    0x6b000000UL,
+    0x6d000000UL,
+    0x6f3e6d10UL,
+    0x7f000100UL,
+    0x8f000100UL,
+    0x9f000100UL,
+    0xa10a0000UL,
+    0xad000000UL,
+    0xb7000000UL,
+    0xbf000400UL,
+    0xc1000827UL,
+};
+
+#define XENSIV_BGT60TRXX_CONF_DEVICE (XENSIV_DEVICE_BGT60UTR11AIP)
+#define XENSIV_BGT60TRXX_CONF_START_FREQ_HZ (57400001000)
+#define XENSIV_BGT60TRXX_CONF_END_FREQ_HZ (62999998000)
+#define XENSIV_BGT60TRXX_CONF_NUM_SAMPLES_PER_CHIRP (512)
+#define XENSIV_BGT60TRXX_CONF_NUM_CHIRPS_PER_FRAME (8)
+#define XENSIV_BGT60TRXX_CONF_NUM_RX_ANTENNAS (1)
+#define XENSIV_BGT60TRXX_CONF_NUM_TX_ANTENNAS (1)
+#define XENSIV_BGT60TRXX_CONF_SAMPLE_RATE (1000000)
+#define XENSIV_BGT60TRXX_CONF_CHIRP_REPETITION_TIME_S (0.00419988)
+#define XENSIV_BGT60TRXX_CONF_FRAME_REPETITION_TIME_S (0.0799223)
+#define XENSIV_BGT60TRXX_CONF_NUM_REGS (40)
+
+#define NUM_SAMPLES_PER_FRAME               (XENSIV_BGT60TRXX_CONF_NUM_RX_ANTENNAS *\
+                                             XENSIV_BGT60TRXX_CONF_NUM_CHIRPS_PER_FRAME *\
+                                             XENSIV_BGT60TRXX_CONF_NUM_SAMPLES_PER_CHIRP)
+
+void radar_setup();
+void radar_loop();
+void radar_irq();
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
