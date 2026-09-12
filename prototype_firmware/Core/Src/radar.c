@@ -105,36 +105,43 @@ void radar_setup() {
         Error_Handler();
 }
 
+bool frame_started = false;
+
 void radar_loop() {
-    xensiv_bgt60trxx_start_frame(&radar, true);
-    while(!data_available);
-    data_available = false;
-    xensiv_bgt60trxx_get_fifo_data(&radar, samples, NUM_SAMPLES_PER_FRAME);
-    xensiv_bgt60trxx_start_frame(&radar, false);
-    float distance_m = get_static_distance(&context, samples);
-    (void)distance_m; // TODO: use for something
-    if(udp) {
-        int len = context.max_range_bin - context.skip + 1;
-        int idx = context.skip;
-        for(int offs = 0; offs < len;) {
-            int pkt_len = len - offs;
-            if(pkt_len > 300) // 300 floats = 1200 bytes
-                pkt_len = 300;
+    if (!frame_started) {
+        xensiv_bgt60trxx_start_frame(&radar, true);
+        frame_started = true;
+    }
+    if (data_available) {
+        data_available = false;
+        xensiv_bgt60trxx_get_fifo_data(&radar, samples, NUM_SAMPLES_PER_FRAME);
+        xensiv_bgt60trxx_start_frame(&radar, false);
+        float distance_m = get_static_distance(&context, samples);
+        (void)distance_m; // TODO: use for something
+        if(udp) {
+            int len = context.max_range_bin - context.skip + 1;
+            int idx = context.skip;
+            for(int offs = 0; offs < len;) {
+                int pkt_len = len - offs;
+                if(pkt_len > 300) // 300 floats = 1200 bytes
+                    pkt_len = 300;
 
-            struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, pkt_len * 4, PBUF_RAM);
-            if(p) {
-                float *pld = p->payload;
-                for(int i = 0; i < pkt_len; i++) {
-                    if(offs == 0 && i == 0)
-                        pld[i] = NAN;
-                    else pld[i] = context.integrated_chirp[idx++];
+                struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, pkt_len * 4, PBUF_RAM);
+                if(p) {
+                    float *pld = p->payload;
+                    for(int i = 0; i < pkt_len; i++) {
+                        if(offs == 0 && i == 0)
+                            pld[i] = NAN;
+                        else pld[i] = context.integrated_chirp[idx++];
+                    }
+                    udp_send(udp, p);
+                    pbuf_free(p);
                 }
-                udp_send(udp, p);
-                pbuf_free(p);
-            }
 
-            offs += pkt_len;
+                offs += pkt_len;
+            }
         }
+        frame_started = false;
     }
 }
 
@@ -167,8 +174,17 @@ void xensiv_bgt60trxx_platform_spi_cs_set(const void* iface, bool val) {
 /* Platform-specific function that performs a SPI write/read transfer to
  * the register file of the sensor. */
 int32_t xensiv_bgt60trxx_platform_spi_transfer(void* iface, uint8_t* tx_data, uint8_t* rx_data, uint32_t len) {
+    HAL_StatusTypeDef status;
     switch_spi_word_size(8);
-    HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, len, HAL_MAX_DELAY);
+    if (tx_data == NULL) {
+        status = HAL_SPI_Receive(&hspi1, rx_data, len, HAL_MAX_DELAY);
+    }
+    else if (rx_data == NULL) {
+        status = HAL_SPI_Transmit(&hspi1, tx_data, len, HAL_MAX_DELAY);
+    }
+    else {
+        status = HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, len, HAL_MAX_DELAY);
+    }
     if (status == HAL_OK) {
         return XENSIV_BGT60TRXX_STATUS_OK;
     }
