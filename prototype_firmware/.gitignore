@@ -17,6 +17,7 @@
 # EXAMPLE
 !Core
 !Drivers
+!LWIP
 !CubeMX
 !Project
 !BGT60TRxx
