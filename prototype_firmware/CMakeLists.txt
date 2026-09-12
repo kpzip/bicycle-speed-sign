@@ -41,14 +41,20 @@ add_subdirectory(cmake/stm32cubemx)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/DSP/Lib/GCC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Lib/GCC/libarm_cortexM7lfdp_math.a
+)
+
+file(GLOB_RECURSE TGT_SOURCES CONFIGURE_DEPENDS 
+    "${CMAKE_CURRENT_SOURCE_DIR}/BGT60TRxx/Src/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/DSP/Src/*.c"
 )
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    ${CMAKE_CURRENT_SOURCE_DIR}/BGT60TRxx/Src
-    ${CMAKE_CURRENT_SOURCE_DIR}/DSP/Src
+    ${TGT_SOURCES}
+    "${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/radar.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/radar_processing.c"
 )
 
 # Add include paths
@@ -64,7 +70,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
     ARM_MATH_CM7
-    __FPU_PRESENT=1
+    __FPU_PRESENT=1U
 )
 
 # Remove wrong libob.a library dependency when using cpp files
@@ -74,5 +80,5 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
     # Add user defined libraries
-    arm_cortexM7lfdp_math
+    # arm_cortexM7lfdp_math
 )

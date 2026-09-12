@@ -38,12 +38,13 @@
 #ifndef RADAR_PROCESSING_H
 #define RADAR_PROCESSING_H
 #include <stdint.h> // Provides fixed-width integer types like int8_t, uint32_t, etc.
-// #include "ifx_sensor_dsp.h"
+#include "ifx_sensor_dsp.h"
 // #include "cyhal.h"
 // #include "cybsp.h"
 // #include <resource_map.h>
 #include "radar.h"
 #include "arm_math.h"
+#include "stm32f7xx_hal.h"
 
 /*******************************************************************************
 * Types
@@ -82,7 +83,7 @@ extern float32_t min_range_m;
 /*******************************************************************************
 * Function Prototypes
 *******************************************************************************/
-cy_rslt_t init_static_distance(static_distance_context_t *ctx);
+HAL_StatusTypeDef init_static_distance(static_distance_context_t *ctx);
 float32_t get_static_distance(static_distance_context_t *ctx, const uint16_t *frame_data);
 
 #endif /* RADAR_PROCESSING_H */

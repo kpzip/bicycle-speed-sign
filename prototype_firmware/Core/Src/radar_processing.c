@@ -38,8 +38,12 @@
 #include <stdlib.h> // Provides functions for memory allocation and other utilities
 #include <stdio.h>  // Provides input/output functions like printf and scanf
 #include "radar_processing.h"
-#include "cyhal.h"
-#include "cybsp.h"
+// #include "cyhal.h"
+// #include "cybsp.h"
+#include "arm_math.h"
+#include "main.h"
+#include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal_def.h"
 
 /*******************************************************************************
 * Global Variables
@@ -59,14 +63,14 @@ static_distance_context_t context;
 * \return cy_rslt_t
 * Returns CY_RSLT_SUCCESS if initialization is successful, otherwise an error code.
 *******************************************************************************/
-cy_rslt_t init_static_distance(static_distance_context_t *ctx)
+HAL_StatusTypeDef init_static_distance(static_distance_context_t *ctx)
 {
-    cy_rslt_t result = CY_RSLT_SUCCESS;
+    arm_status result = ARM_MATH_SUCCESS;
     
     /* Check for valid algorithm configurations */
 	if ((max_range_m < min_range_m) || (zeroPadding_factor != 1 && zeroPadding_factor != 2 && zeroPadding_factor != 4 && zeroPadding_factor != 8)) {
 		printf("Invalid algorithm configurations!\r\n");
-		CY_ASSERT(0);
+		Error_Handler();
 	}
 
     /* Calculate parameters */
@@ -94,7 +98,7 @@ cy_rslt_t init_static_distance(static_distance_context_t *ctx)
         free(ctx->fft_buffer_real);
         free(ctx->fft_win);
         free(ctx->integrated_chirp);
-        return CY_RSLT_TYPE_ERROR;
+        return HAL_ERROR;
     }
 
     /* Initialize Arm FFT instance */
@@ -106,7 +110,7 @@ cy_rslt_t init_static_distance(static_distance_context_t *ctx)
         free(ctx->fft_buffer_real);
         free(ctx->fft_win);
         free(ctx->integrated_chirp);
-        return CY_RSLT_TYPE_ERROR;
+        return HAL_ERROR;
     }
 
     /* Hamming Window function */
@@ -114,7 +118,7 @@ cy_rslt_t init_static_distance(static_distance_context_t *ctx)
 
     printf("Range Accuracy=%.2f CMS | Minimum Range: %.1f CMS | Maximum Range: %.1f CMS \r\n\n", (double)(ctx->bin_len * 100), (double)(ctx->skip * ctx->bin_len * 100), (double)(ctx->max_range_bin *ctx->bin_len* 100));
 
-    return CY_RSLT_SUCCESS;
+    return HAL_OK;
 }
 
 /*******************************************************************************

@@ -25,3 +25,4 @@
 !.mxproject
 !cmake
 !startup_stm32f767xx.s
+!STM32F767xx_FLASH.ld
