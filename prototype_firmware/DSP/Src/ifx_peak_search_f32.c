@@ -82,7 +82,7 @@ int32_t ifx_peak_search_f32(const float32_t* x, int32_t length, int32_t* peak_in
     if (opts == NULL)
     { // default options
         height = -INFINITY;
-        threshold = FLT_EPSILON;
+        threshold = 1e-9;
         distance = 1;
         width = 1;
     }
