@@ -1,6 +1,7 @@
 #include "main.h"
 #include "stm32f7xx_hal.h"
 #include "stm32f7xx_hal_def.h"
+#include "lwip/udp.h"
 #include "xensiv_bgt60trxx.h"
 #include "radar.h"
 #include "radar_processing.h"
@@ -12,6 +13,8 @@ float min_range_m = 0.15f;        // Minimum measurable distance by the radar in
 xensiv_bgt60trxx_t radar;
 volatile bool data_available = false;
 uint16_t samples[NUM_SAMPLES_PER_FRAME];
+
+struct udp_pcb *udp = NULL;
 
 const uint32_t register_list[] = {
     0x11c0e20UL,
@@ -86,6 +89,20 @@ void radar_setup() {
     if (status != XENSIV_BGT60TRXX_STATUS_OK) {
         Error_Handler();
     }
+
+    // Init UDP
+    ip_addr_t dest_ip;
+    IP4_ADDR(&dest_ip, 192, 168, 3, 1);
+    u16_t dest_port = 3000;
+
+    udp = udp_new();
+    if(!udp) Error_Handler();
+
+    if(udp_bind(udp, IP_ADDR_ANY, 0) != ERR_OK)
+        Error_Handler();
+
+    if(udp_connect(udp, &dest_ip, dest_port) != ERR_OK)
+        Error_Handler();
 }
 
 void radar_loop() {
@@ -94,9 +111,31 @@ void radar_loop() {
     data_available = false;
     xensiv_bgt60trxx_get_fifo_data(&radar, samples, NUM_SAMPLES_PER_FRAME);
     xensiv_bgt60trxx_start_frame(&radar, false);
-    // TODO: something
-    // float distance_m = get_static_distance(&context, samples);
-    // printf("Distance: %.2f CMS\r\n", (double)(distance_m * 100.0f));
+    float distance_m = get_static_distance(&context, samples);
+    (void)distance_m; // TODO: use for something
+    if(udp) {
+        int len = context.max_range_bin - context.skip + 1;
+        int idx = context.skip;
+        for(int offs = 0; offs < len;) {
+            int pkt_len = len - offs;
+            if(pkt_len > 300) // 300 floats = 1200 bytes
+                pkt_len = 300;
+
+            struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, pkt_len * 4, PBUF_RAM);
+            if(p) {
+                float *pld = p->payload;
+                for(int i = 0; i < pkt_len; i++) {
+                    if(offs == 0 && i == 0)
+                        pld[i] = NAN;
+                    else pld[i] = context.integrated_chirp[idx++];
+                }
+                udp_send(udp, p);
+                pbuf_free(p);
+            }
+
+            offs += pkt_len;
+        }
+    }
 }
 
 void radar_irq() {
