@@ -94,3 +94,42 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     # Add user defined libraries
     CMSISDSP
 )
+
+# Emit the .hex and .bin images that flashing tools expect alongside the .elf.
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O ihex
+            $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+            $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex
+    COMMAND ${CMAKE_OBJCOPY} -O binary
+            $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+            $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.bin
+    COMMENT "Generating ${CMAKE_PROJECT_NAME}.hex and ${CMAKE_PROJECT_NAME}.bin"
+)
+
+# The board is a NUCLEO-F767ZI, which carries an on-board ST-LINK.
+# Override with e.g. -DFLASH_TOOL=probe-rs at configure time.
+set(FLASH_TOOL "openocd" CACHE STRING "Tool used by the 'flash' target")
+set_property(CACHE FLASH_TOOL PROPERTY STRINGS openocd st-flash probe-rs)
+
+if(FLASH_TOOL STREQUAL "openocd")
+    # Programs the .elf directly; verifies, resets into the new image, exits.
+    set(FLASH_COMMAND openocd -f board/st_nucleo_f7.cfg
+        -c "program $<TARGET_FILE:${CMAKE_PROJECT_NAME}> verify reset exit")
+elseif(FLASH_TOOL STREQUAL "st-flash")
+    # Takes a raw image, so it needs the base of flash stated explicitly.
+    set(FLASH_COMMAND st-flash --reset write
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.bin 0x08000000)
+elseif(FLASH_TOOL STREQUAL "probe-rs")
+    set(FLASH_COMMAND probe-rs download --chip STM32F767ZI
+        $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
+else()
+    message(FATAL_ERROR
+        "Unknown FLASH_TOOL '${FLASH_TOOL}' (expected openocd, st-flash or probe-rs)")
+endif()
+
+add_custom_target(flash
+    COMMAND ${FLASH_COMMAND}
+    USES_TERMINAL
+    COMMENT "Flashing ${CMAKE_PROJECT_NAME} via ${FLASH_TOOL}"
+)
+add_dependencies(flash ${CMAKE_PROJECT_NAME})
