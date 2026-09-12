@@ -38,10 +38,25 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
-# Link directories setup
-target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined library search paths
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Lib/GCC/libarm_cortexM7lfdp_math.a
+# Build CMSIS-DSP from source (vendored in Drivers/CMSIS/DSP).
+# CMSISCORE points at the directory holding CMSIS-Core's Include/ (core_cm7.h).
+set(CMSISCORE ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS)
+# Cortex-M7 is Armv7E-M: it has the DSP extension and an FPU, but no Helium/MVE
+# and no Neon, so leave those vector backends off.
+set(HELIUM OFF)
+set(MVEI OFF)
+set(MVEF OFF)
+set(MVEFLOAT16 OFF)
+set(NEON OFF)
+# Armv7E-M has no half-precision arithmetic, so skip the float16 kernels.
+set(DISABLEFLOAT16 ON)
+add_subdirectory(Drivers/CMSIS/DSP)
+
+# CMSIS-DSP includes core_cm7.h directly rather than the ST device header, so it
+# needs the FPU configuration macros that stm32f767xx.h would otherwise supply.
+target_compile_definitions(CMSISDSP PRIVATE
+    __FPU_PRESENT=1U
+    __DSP_PRESENT=1U
 )
 
 file(GLOB_RECURSE TGT_SOURCES CONFIGURE_DEPENDS 
@@ -62,15 +77,12 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ${CMAKE_CURRENT_SOURCE_DIR}/BGT60TRxx/Inc
     ${CMAKE_CURRENT_SOURCE_DIR}/DSP/Inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/DSP/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Include
 )
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
-    ARM_MATH_CM7
-    __FPU_PRESENT=1U
 )
 
 # Remove wrong libob.a library dependency when using cpp files
@@ -80,5 +92,5 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
     # Add user defined libraries
-    # arm_cortexM7lfdp_math
+    CMSISDSP
 )
