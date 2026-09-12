@@ -3,11 +3,15 @@
 #include "stm32f7xx_hal_def.h"
 #include "xensiv_bgt60trxx.h"
 #include "radar.h"
+#include "radar_processing.h"
 
-#include <stdint.h>
-#include <stdbool.h>
+int16_t zeroPadding_factor = 1;       // Zero padding factor
+float max_range_m = 3.0f;         // Maximum measurable distance by the radar in meters
+float min_range_m = 0.15f;        // Minimum measurable distance by the radar in meters
 
 xensiv_bgt60trxx_t radar;
+volatile bool data_available = false;
+uint16_t samples[NUM_SAMPLES_PER_FRAME];
 
 const uint32_t register_list[] = {
     0x11c0e20UL,
@@ -52,29 +56,51 @@ const uint32_t register_list[] = {
     0xc1000827UL,
 };
 
+static_distance_context_t ctx;
+
 void radar_setup() {
+    xensiv_bgt60trxx_platform_rst_set(NULL, true);
+    xensiv_bgt60trxx_platform_spi_cs_set(NULL, true);
+    xensiv_bgt60trxx_platform_delay(1U);
+    xensiv_bgt60trxx_platform_rst_set(NULL, false);
+    xensiv_bgt60trxx_platform_delay(1U);
+    xensiv_bgt60trxx_platform_rst_set(NULL, true);
+    xensiv_bgt60trxx_platform_delay(1U);
+
     int32_t status = xensiv_bgt60trxx_init(&radar, &hspi1, false);
     if (status != XENSIV_BGT60TRXX_STATUS_OK) {
         Error_Handler();
     }
-
-    status = xensiv_bgt60trxx_set_fifo_limit(&radar, NUM_SAMPLES_PER_FRAME);
-
-    
 
     status = xensiv_bgt60trxx_config(&radar, register_list, sizeof(register_list)/sizeof(uint32_t));
     if (status != XENSIV_BGT60TRXX_STATUS_OK) {
         Error_Handler();
     }
 
+    status = xensiv_bgt60trxx_set_fifo_limit(&radar, NUM_SAMPLES_PER_FRAME);
+    if (status != XENSIV_BGT60TRXX_STATUS_OK) {
+        Error_Handler();
+    }
+
+    status = init_static_distance(&context);
+    if (status != XENSIV_BGT60TRXX_STATUS_OK) {
+        Error_Handler();
+    }
 }
 
 void radar_loop() {
-
+    xensiv_bgt60trxx_start_frame(&radar, true);
+    while(!data_available);
+    data_available = false;
+    xensiv_bgt60trxx_get_fifo_data(&radar, samples, NUM_SAMPLES_PER_FRAME);
+    xensiv_bgt60trxx_start_frame(&radar, false);
+    // TODO: something
+    // float distance_m = get_static_distance(&context, samples);
+    // printf("Distance: %.2f CMS\r\n", (double)(distance_m * 100.0f));
 }
 
 void radar_irq() {
-
+    data_available = true;
 }
 
 void switch_spi_word_size(int bits) {
