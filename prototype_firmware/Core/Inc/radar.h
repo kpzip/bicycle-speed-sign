@@ -6,8 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-
-
+#include <stdbool.h>
 
 #define XENSIV_BGT60TRXX_CONF_DEVICE (XENSIV_DEVICE_BGT60UTR11AIP)
 #define XENSIV_BGT60TRXX_CONF_START_FREQ_HZ (57400001000)
@@ -28,6 +27,14 @@ extern "C" {
 void radar_setup();
 void radar_loop();
 void radar_irq();
+
+void xensiv_bgt60trxx_platform_rst_set(const void* iface, bool val);
+void xensiv_bgt60trxx_platform_spi_cs_set(const void* iface, bool val);
+int32_t xensiv_bgt60trxx_platform_spi_transfer(void* iface, uint8_t* tx_data, uint8_t* rx_data, uint32_t len);
+int32_t xensiv_bgt60trxx_platform_spi_fifo_read(void* iface, uint16_t* rx_data, uint32_t len);
+void xensiv_bgt60trxx_platform_delay(uint32_t ms);
+uint32_t xensiv_bgt60trxx_platform_word_reverse(uint32_t x);
+void xensiv_bgt60trxx_platform_assert(int expr);
 
 #ifdef __cplusplus
 }
