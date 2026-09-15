@@ -105,6 +105,7 @@ void Error_Handler(void);
 #define FMCW_CS_GPIO_Port GPIOD
 #define FMCW_IRQ_Pin GPIO_PIN_1
 #define FMCW_IRQ_GPIO_Port GPIOD
+#define FMCW_IRQ_EXTI_IRQn EXTI1_IRQn
 #define FMCW_RST_Pin GPIO_PIN_2
 #define FMCW_RST_GPIO_Port GPIOD
 #define RMII_TX_EN_Pin GPIO_PIN_11
