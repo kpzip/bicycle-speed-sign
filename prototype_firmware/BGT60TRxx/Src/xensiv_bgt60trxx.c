@@ -215,12 +215,17 @@ int32_t xensiv_bgt60trxx_set_reg(const xensiv_bgt60trxx_t* dev, uint32_t reg_add
 
     temp = xensiv_bgt60trxx_platform_word_reverse(temp);
 
+    uint32_t stat = 0;
+
     xensiv_bgt60trxx_platform_spi_cs_set(dev->iface, 0);
     int32_t status = xensiv_bgt60trxx_platform_spi_transfer(dev->iface,
                                                             (uint8_t*)&temp,
-                                                            NULL,
+                                                            (uint8_t*)&stat,
                                                             XENSIV_BGT60TRXX_SPI_REG_XFER_LEN_BYTES);
     xensiv_bgt60trxx_platform_spi_cs_set(dev->iface, 1);
+
+    stat &= 0b0011;
+    xensiv_bgt60trxx_platform_assert(stat == 0);
 
     return status;
 }
@@ -245,6 +250,8 @@ int32_t xensiv_bgt60trxx_get_reg(const xensiv_bgt60trxx_t* dev, uint32_t reg_add
 
     if (XENSIV_BGT60TRXX_STATUS_OK == status)
     {
+        xensiv_bgt60trxx_platform_assert((*data & 0b0011) == 0);
+
         *data = xensiv_bgt60trxx_platform_word_reverse(*data);
         *data &= XENSIV_BGT60TRXX_SPI_DATA_MSK;
     }
