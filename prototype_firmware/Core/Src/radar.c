@@ -92,7 +92,7 @@ void radar_setup() {
 
     // Init UDP
     ip_addr_t dest_ip;
-    IP4_ADDR(&dest_ip, 192, 168, 3, 1);
+    IP4_ADDR(&dest_ip, 192, 168, 1, 1);
     u16_t dest_port = 3000;
 
     udp = udp_new();
