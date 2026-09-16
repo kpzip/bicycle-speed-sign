@@ -13,11 +13,15 @@ SDL_FColor color_map(float value) {
 	return {value, 0.0, 1.0, 1.0};
 }
 
+radar_data_t max = 1;
 std::vector<SDL_FPoint> scale(const std::vector<radar_data_t> data) {
+	for(auto &x:data)
+		if(x > max) max = x;
+
 	std::vector<SDL_FPoint> pts;
 	pts.reserve(data.size());
 	for(size_t i = 0; i < data.size(); i++)
-		pts.emplace_back((float)i/(data.size()-1), data[i] / 2);
+		pts.emplace_back((float)i/(data.size()-1), data[i] / max);
 	return pts;
 }
 
