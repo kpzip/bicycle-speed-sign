@@ -13,15 +13,54 @@ SDL_FColor color_map(float value) {
 	return {value, 0.0, 1.0, 1.0};
 }
 
-radar_data_t max = 1;
-std::vector<SDL_FPoint> scale(const std::vector<radar_data_t> data) {
+radar_data_t max = 0.1;
+
+int avgs = 0;
+const int avgs_count = 5;
+std::vector<radar_data_t> avg;
+
+bool log_scale = false;
+
+std::vector<SDL_FPoint> scale(std::vector<radar_data_t> data) {
+	// Average readings
+	if(avgs) {
+		if(avg.size() != data.size()) {
+			avgs = avgs_count;
+			avg = data;
+		} else for(size_t i = 0; i < data.size(); i++)
+			avg[i] += data[i];
+		if(!--avgs) for(auto &x:avg)
+			x /= avgs_count;
+	}
+	
+	// Subtract average
+	else if(avg.size() == data.size())
+		for(size_t i = 0; i < data.size(); i++)
+			data[i] -= avg[i];
+	
+	// Normalize
 	for(auto &x:data)
 		if(x > max) max = x;
-
+	
+	for(auto &x:data)
+		x /= max;
+	
+	// Log scale
+	if(log_scale)
+		for(auto &x:data) {
+			if(x < 0) x = 1e-9;
+			x = std::log10(x);
+			if(std::isnan(x) || std::isinf(x))
+				x = 0; // source moment
+			x += 2;
+			x /= 2;
+			x = std::max(0.0f, std::min(1.0f, x));
+		}
+	
 	std::vector<SDL_FPoint> pts;
 	pts.reserve(data.size());
 	for(size_t i = 0; i < data.size(); i++)
-		pts.emplace_back((float)i/(data.size()-1), data[i] / max);
+		pts.emplace_back((float)i/(data.size()-1), data[i]);
 	return pts;
 }
 
@@ -53,6 +92,7 @@ int main() {
 
 	SDL_SetRenderLogicalPresentation(renderer, 1, 1, SDL_LOGICAL_PRESENTATION_STRETCH);
 	SDL_SetRenderVSync(renderer, 1);
+	SDL_HideCursor();
 
 	std::jthread receive_thread{receive_task};
 
@@ -60,8 +100,35 @@ int main() {
 	while(run) {
 		SDL_Event event;
 		while(SDL_PollEvent(&event)) {
-			if(event.type == SDL_EVENT_QUIT)
-				run = false;
+			switch(event.type) {
+				case SDL_EVENT_QUIT:
+					run = false;
+					break;
+				case SDL_EVENT_KEY_DOWN:
+					switch(event.key.key) {
+						case SDLK_Q:
+							run = false;
+							break;
+						case SDLK_S:
+							max = 0.1;
+							break;
+						case SDLK_0:
+							avgs = avgs_count;
+							break;
+						case SDLK_9:
+							avg.clear();
+							avgs = 0;
+							break;
+						case SDLK_L:
+							log_scale ^= 1;
+							break;
+						default:
+							break;
+					}
+					break;
+				default:
+					break;
+			}
 		}
 
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
