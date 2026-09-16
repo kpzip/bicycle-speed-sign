@@ -175,7 +175,7 @@ void xensiv_bgt60trxx_platform_spi_cs_set(const void* iface, bool val) {
  * the register file of the sensor. */
 int32_t xensiv_bgt60trxx_platform_spi_transfer(void* iface, uint8_t* tx_data, uint8_t* rx_data, uint32_t len) {
     HAL_StatusTypeDef status;
-    switch_spi_word_size(8);
+    switch_spi_word_size(SPI_DATASIZE_8BIT);
     if (tx_data == NULL) {
         status = HAL_SPI_Receive(&hspi1, rx_data, len, HAL_MAX_DELAY);
     }
@@ -196,7 +196,7 @@ int32_t xensiv_bgt60trxx_platform_spi_transfer(void* iface, uint8_t* tx_data, ui
 /* Platform-specific function that performs a SPI burst read transfer to
  * receive a block of data from sensor FIFO. */
 int32_t xensiv_bgt60trxx_platform_spi_fifo_read(void* iface, uint16_t* rx_data, uint32_t len) {
-    switch_spi_word_size(12);
+    switch_spi_word_size(SPI_DATASIZE_12BIT);
     HAL_StatusTypeDef status = HAL_SPI_Receive(&hspi1, (uint8_t*)rx_data, len, HAL_MAX_DELAY);
     if (status == HAL_OK) {
         return XENSIV_BGT60TRXX_STATUS_OK;
