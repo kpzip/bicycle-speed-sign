@@ -70,7 +70,7 @@ void radar_setup() {
     xensiv_bgt60trxx_platform_rst_set(NULL, true);
     xensiv_bgt60trxx_platform_delay(1U);
 
-    int32_t status = xensiv_bgt60trxx_init(&radar, &hspi1, false);
+    int32_t status = xensiv_bgt60trxx_init(&radar, &hspi1, true);
     if (status != XENSIV_BGT60TRXX_STATUS_OK) {
         Error_Handler();
     }
