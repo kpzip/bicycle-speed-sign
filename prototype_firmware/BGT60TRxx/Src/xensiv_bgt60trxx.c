@@ -310,7 +310,7 @@ int32_t xensiv_bgt60trxx_get_fifo_data(const xensiv_bgt60trxx_t* dev, uint16_t* 
 
     if (XENSIV_BGT60TRXX_STATUS_OK == retval)
     {
-        if ((gsr0 & (XENSIV_BGT60TRXX_REG_GSR0_FOU_ERR_MSK |
+        if ((gsr0 & (/*XENSIV_BGT60TRXX_REG_GSR0_FOU_ERR_MSK |*/
                      XENSIV_BGT60TRXX_REG_GSR0_SPI_BURST_ERR_MSK |
                      XENSIV_BGT60TRXX_REG_GSR0_CLK_NUM_ERR_MSK)) == 0U)
         {
